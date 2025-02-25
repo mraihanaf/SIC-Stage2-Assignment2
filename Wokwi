@@ -1,0 +1,101 @@
+"""
+MicroPython IoT Weather Station Example for Wokwi.com
+
+To view the data:
+
+1. Go to http://www.hivemq.com/demos/websocket-client/
+2. Click "Connect"
+3. Under Subscriptions, click "Add New Topic Subscription"
+4. In the Topic field, type "wokwi-weather" then click "Subscribe"
+
+Now click on the DHT22 sensor in the simulation,
+change the temperature/humidity, and you should see
+the message appear on the MQTT Broker, in the "Messages" pane.
+
+Copyright (C) 2022, Uri Shaked
+
+https://wokwi.com/arduino/projects/322577683855704658
+"""
+
+import network
+import time
+from machine import Pin
+import dht
+import ujson
+from umqtt.simple import MQTTClient
+
+from machine  import Pin, time_pulse_us, SoftI2C
+from time import sleep, sleep_us
+
+from machine  import Pin, time_pulse_us, SoftI2C
+from time import sleep, sleep_us
+
+Trigger = Pin(23,Pin.OUT)
+Echo = Pin(19,Pin.IN)
+
+# MQTT Server Parameters
+MQTT_CLIENT_ID = "Unovastra"
+MQTT_BROKER    = "broker.emqx.io"
+MQTT_USER      = ""
+MQTT_PASSWORD  = ""
+MQTT_ACTUATOR_TOPIC = "HSC452/Raihan/aktuasi_led"
+MQTT_SENSOR_TOPIC = "HSC452/Raihan/data_sensor"
+
+sensor = dht.DHT22(Pin(15))
+led = Pin(14, Pin.OUT)
+
+print("Connecting to WiFi", end="")
+sta_if = network.WLAN(network.STA_IF)
+sta_if.active(True)
+sta_if.connect('Wokwi-GUEST', '')
+while not sta_if.isconnected():
+  print(".", end="")
+  time.sleep(0.1)
+print(" Connected!")
+
+def sub_callback(topic, msg):
+    if(str(topic, "UTF-32") == MQTT_ACTUATOR_TOPIC):
+        if(str(msg, "UTF-32") == "ON"):
+            led.on()
+        elif(str(msg, "UTF-32") == "OFF"):
+            led.off()
+        else:
+            print("invalid message") 
+    print(str(topic, "UTF-32"), str(msg, "UTF-32"))
+
+
+print("Connecting to MQTT server... ", end="")
+client = MQTTClient(MQTT_CLIENT_ID, MQTT_BROKER, user=MQTT_USER, password=MQTT_PASSWORD)
+client.connect()
+client.set_callback(sub_callback)
+client.subscribe(MQTT_ACTUATOR_TOPIC)
+print("Connected!")
+
+prev_weather = ""
+while True:
+  client.check_msg()
+  print("Measuring weather conditions... ", end="")
+  sensor.measure() 
+  message = ujson.dumps({
+    "temp": sensor.temperature(),
+    "humidity": sensor.humidity(),
+  })
+  Trigger.value(0)
+  sleep_us(2)
+  Trigger.value(1)
+  sleep_us(10)
+  Trigger.value(0)
+
+  twoWayTime =  time_pulse_us(Echo,1)
+
+  distance = (twoWayTime * 0.034)/2
+  print('Distance in cm: ', distance)
+  sleep(1)
+  if message != prev_weather:
+    print("Updated!")
+    print("Reporting to MQTT topic {}: {}".format(MQTT_SENSOR_TOPIC, message))
+    client.publish(MQTT_SENSOR_TOPIC, message)
+    prev_weather = message
+  else:
+    print("No change")
+  time.sleep(1)
