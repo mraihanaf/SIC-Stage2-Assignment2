@@ -8,7 +8,7 @@ This prototype project, utilize ESP32 to sends sensor data to backend REST api a
 4. **Flask Server** Processes the data and stores it in a **database**
 
 ## Instruction
-**Hardware**: ESP32, LDR sensor, DHT22, Ultrasonic Sensor.
+**Hardware**: ESP32, LDR sensor, DHT11, Ultrasonic Sensor, and Soil Moist sensor.
 **Software**: 
 - MicroPython installed on ESP32.
 - Ampy for uploading MicroPython scripts.
