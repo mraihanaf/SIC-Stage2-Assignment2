@@ -16,16 +16,20 @@ This prototype project, utilize ESP32 to sends sensor data to backend REST api a
 - Ubidots account
 
 ## Install firmware to the ESP32
-download **MicroPython Firmware** from flash the `./esp32-firmware/main.py` code
-
-## Setup Ubidots
-- Login Ubidots account
-- Create a **New Device**
-- Add variables `Temperature` and `Moisture`
-- Setup `MQTT` connection for real time visualisasi  
-
-## Setup Database
+1. download **MicroPython Firmware**
+2. Change the the required variables in `esp32-firmware/main.py`
+3. Flash the `main.py` file.
 
 
 ## Run the REST Server
-
+```sh
+cd server
+docker-compose up
+```
+or
+```sh
+pipenv install
+pipenv run dev
+# you can ran in prod mode too
+pipenv run prod
+```
